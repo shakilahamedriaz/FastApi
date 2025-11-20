@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Patient Viewer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f172a;            /* slate-900 */
+      --card: #111827;          /* gray-900 */
+      --card-2: #0b1220;        /* darker card */
+      --muted: #94a3b8;         /* slate-400 */
+      --text: #e5e7eb;          /* gray-200 */
+      --accent: #22d3ee;        /* cyan-400 */
+      --accent-2: #06b6d4;      /* cyan-500 */
+      --danger: #f87171;        /* red-400 */
+      --ok: #34d399;            /* emerald-400 */
+      --ring: rgba(34,211,238,.35);
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
+    * { box-sizing: border-box }
+    html, body { height: 100% }
+    body {
+      margin: 0;
+      font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(1200px 600px at 10% 10%, rgba(34,211,238,.05), transparent 60%),
+        radial-gradient(1000px 500px at 90% 20%, rgba(99,102,241,.06), transparent 60%),
+        linear-gradient(180deg, #0b1021 0%, #0f172a 60%, #0b1021 100%);
+      background-attachment: fixed;
+      display: grid;
+      place-items: center;
+      padding: 32px 16px;
+    }
+    .container {
+      width: 100%;
+      max-width: 960px;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .brand {
+      display: flex; align-items: center; gap: 12px;
+    }
+    .logo {
+      width: 42px; height: 42px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), #6366f1);
+      display: grid; place-items: center;
+      box-shadow: 0 10px 20px rgba(34,211,238,.25);
+    }
+    .brand h1{ margin: 0; font-size: 20px; letter-spacing: .2px }
+    .card {
+      background: linear-gradient(180deg, var(--card) 0%, var(--card-2) 100%);
+      border: 1px solid rgba(148,163,184,.15);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .card-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid rgba(148,163,184,.12);
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .card-title { margin: 0; font-size: 18px }
+    .card-body { padding: 20px 24px }
+    .row { display: grid; grid-template-columns: 1fr; gap: 16px }
+    @media (min-width: 860px) { .row { grid-template-columns: 1.1fr .9fr } }
+
+    .input-group {
+      display: grid; grid-template-columns: 1fr auto; gap: 10px;
+      align-items: center;
+    }
+    label { font-size: 13px; color: var(--muted); margin-bottom: 8px; display:block }
+    input[type="text"] {
+      width: 100%;
+      padding: 12px 14px;
+      background: #0b1220;
+      border: 1px solid rgba(148,163,184,.2);
+      border-radius: 10px;
+      color: var(--text);
+      outline: none;
+      transition: border .2s, box-shadow .2s;
+    }
+    input[type="text"]::placeholder { color: #64748b }
+    input[type="text"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px var(--ring);
+    }
+    button {
+      height: 42px;
+      padding: 0 16px;
+      border: none;
+      border-radius: 10px;
+      color: #041016;
+      font-weight: 600;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      cursor: pointer;
+      transition: transform .05s ease, box-shadow .2s ease, opacity .2s ease;
+      box-shadow: 0 10px 20px rgba(34,211,238,.25);
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    button:hover { box-shadow: 0 12px 22px rgba(34,211,238,.32) }
+    button:active { transform: translateY(1px) }
+    button:disabled { opacity: .6; cursor: not-allowed }
+    .btn-secondary {
+      background: transparent; color: var(--text);
+      border: 1px solid rgba(148,163,184,.25);
+      box-shadow: none;
+    }
+    .hint { font-size: 12px; color: var(--muted); margin-top: 6px }
+    .status {
+      font-size: 12px; margin-left: 8px; padding: 6px 10px; border-radius: 999px;
+      border: 1px solid rgba(148,163,184,.2); color: var(--muted);
+    }
+    .status.ok { color: var(--ok); border-color: rgba(52,211,153,.35); background: rgba(52,211,153,.08) }
+    .status.err { color: var(--danger); border-color: rgba(248,113,113,.35); background: rgba(248,113,113,.08) }
+
+    .panel {
+      background: rgba(2,6,23,.45);
+      border: 1px solid rgba(148,163,184,.12);
+      border-radius: 12px;
+      padding: 14px;
+    }
+    pre {
+      margin: 0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #e2e8f0;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      max-height: 380px;
+      overflow: auto;
+    }
+    .toolbar {
+      display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px;
+    }
+    .pill {
+      padding: 6px 10px; border-radius: 999px; font-size: 12px;
+      background: rgba(15,23,42,.8); border: 1px solid rgba(148,163,184,.2); color: var(--muted);
+    }
+    .error-text { color: var(--danger) }
+    .success-text { color: var(--ok) }
+
+    .spinner {
+      width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.25);
+      border-top-color: white; border-radius: 50%; animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg) } }
+
+    .footer {
+      margin-top: 18px; display:flex; align-items:center; justify-content:space-between; gap: 12px;
+      color: var(--muted); font-size: 12px;
+    }
+    .link { color: var(--accent); text-decoration: none }
+    .link:hover { text-decoration: underline }
+    .grid {
+      display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px;
+    }
+    select {
+      height: 42px; border-radius: 10px; padding: 0 12px; background:#0b1220; color: var(--text);
+      border: 1px solid rgba(148,163,184,.2); outline: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path d="M12 3v18M3 12h18" stroke="white" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <h1>Patient Viewer</h1>
+          <div class="hint">Query your FastAPI service for patient details</div>
+        </div>
+      </div>
+      <div class="status" id="apiStatus">API: unknown</div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Lookup Patient</h3>
+        <div class="pill" id="meta">Ready</div>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div>
+            <label for="pid">Patient ID</label>
+            <div class="input-group">
+              <input id="pid" type="text" placeholder="e.g., P001" autocomplete="off" />
+              <button id="btnFetch" onclick="getPatient()">
+                <span id="btnIcon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path d="M11 19a8 8 0 1 1 5.293-14.293A8 8 0 0 1 11 19Z" stroke="black" stroke-width="2"/>
+                    <path d="m21 21-4.35-4.35" stroke="black" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                </span>
+                Get Patient
+              </button>
+            </div>
+            <div class="hint">Press Enter to search. Uses GET /patient/{id}</div>
+
+            <div style="margin-top:18px">
+              <div class="toolbar">
+                <strong>Response</strong>
+                <div>
+                  <button class="btn-secondary" id="btnCopy" onclick="copyOutput()">Copy</button>
+                  <button class="btn-secondary" onclick="clearOutput()">Clear</button>
+                </div>
+              </div>
+              <div class="panel">
+                <pre id="output">Awaiting query…</pre>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label>Quick Actions</label>
+            <div class="grid">
+              <button class="btn-secondary" onclick="ping()">Ping API</button>
+              <button class="btn-secondary" onclick="getAll()">All Patients</button>
+              <button class="btn-secondary" onclick="sortPatients()">Sort by BMI</button>
+            </div>
+
+            <div style="margin-top:16px">
+              <label>Sort Options</label>
+              <div class="grid">
+                <select id="sortBy">
+                  <option value="bmi">BMI</option>
+                  <option value="height">Height</option>
+                  <option value="weight">Weight</option>
+                </select>
+                <select id="order">
+                  <option value="asc">Ascending</option>
+                  <option value="desc">Descending</option>
+                </select>
+                <button class="btn-secondary" onclick="sortPatients()">Apply</button>
+              </div>
+              <div class="hint">Uses GET /sort?sort_by=...&order=...</div>
+            </div>
+
+            <div style="margin-top:16px">
+              <label>API Base URL</label>
+              <div class="panel"><code id="apiBaseShown"></code></div>
+              <div class="hint">Update API_BASE_URL in the script if your backend runs on a different host/port.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div>Status: <span id="statusText" class="success-text">Idle</span></div>
+      <div>Need help? <a class="link" href="http://127.0.0.1:8000/docs" target="_blank" rel="noreferrer">Open API Docs</a></div>
+    </div>
+  </div>
+
+  <script>
+    // Configure your API base here
+    const API_BASE_URL = "http://127.0.0.1:8000";
+
+    const el = (id) => document.getElementById(id);
+    const output = el("output");
+    const statusText = el("statusText");
+    const apiStatus = el("apiStatus");
+    const btnFetch = el("btnFetch");
+    const btnIcon = el("btnIcon");
+    const pid = el("pid");
+    const meta = el("meta");
+
+    el("apiBaseShown").textContent = API_BASE_URL;
+
+    function setLoading(loading) {
+      btnFetch.disabled = loading;
+      meta.textContent = loading ? "Loading…" : "Ready";
+      if (loading) {
+        btnIcon.innerHTML = '<span class="spinner" aria-hidden="true"></span>';
+      } else {
+        btnIcon.innerHTML = `
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M11 19a8 8 0 1 1 5.293-14.293A8 8 0 0 1 11 19Z" stroke="black" stroke-width="2"/>
+            <path d="m21 21-4.35-4.35" stroke="black" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        `;
+      }
+    }
+
+    function showStatus(text, ok = true) {
+      statusText.textContent = text;
+      statusText.className = ok ? "success-text" : "error-text";
+    }
+
+    function pretty(obj) {
+      try { return JSON.stringify(obj, null, 2); } catch { return String(obj) }
+    }
+
+    async function safeFetch(url, options = {}) {
+      const controller = new AbortController();
+      const t = setTimeout(() => controller.abort(), 15000);
+      try {
+        const res = await fetch(url, { ...options, signal: controller.signal });
+        let body;
+        try { body = await res.json(); } catch { body = await res.text(); }
+        return { ok: res.ok, status: res.status, body };
+      } finally {
+        clearTimeout(t);
+      }
+    }
+
+    async function ping() {
+      setLoading(true);
+      showStatus("Pinging…");
+      const { ok, status, body } = await safeFetch(`${API_BASE_URL}/`);
+      output.textContent = pretty(body);
+      apiStatus.textContent = ok ? `API: online (${status})` : `API: error (${status})`;
+      apiStatus.className = `status ${ok ? 'ok' : 'err'}`;
+      showStatus(ok ? "API reachable" : "API error", ok);
+      setLoading(false);
+    }
+
+    async function getPatient() {
+      const id = pid.value.trim();
+      if (!id) {
+        output.textContent = "Please enter a patient ID (e.g., P001).";
+        pid.focus();
+        return;
+      }
+      setLoading(true);
+      showStatus(`Fetching /patient/${id}…`);
+      const { ok, status, body } = await safeFetch(`${API_BASE_URL}/patient/${encodeURIComponent(id)}`);
+      output.textContent = pretty(body);
+      showStatus(ok ? `Success (${status})` : `Failed (${status})`, ok);
+      apiStatus.textContent = ok ? `API: online (${status})` : `API: error (${status})`;
+      apiStatus.className = `status ${ok ? 'ok' : 'err'}`;
+      setLoading(false);
+    }
+
+    async function getAll() {
+      setLoading(true);
+      showStatus("Fetching /patient…");
+      const { ok, status, body } = await safeFetch(`${API_BASE_URL}/patient`);
+      output.textContent = pretty(body);
+      showStatus(ok ? `Success (${status})` : `Failed (${status})`, ok);
+      apiStatus.textContent = ok ? `API: online (${status})` : `API: error (${status})`;
+      apiStatus.className = `status ${ok ? 'ok' : 'err'}`;
+      setLoading(false);
+    }
+
+    async function sortPatients() {
+      const sortBy = el("sortBy").value;
+      const order = el("order").value;
+      setLoading(true);
+      showStatus(`Fetching /sort?sort_by=${sortBy}&order=${order}…`);
+      const url = `${API_BASE_URL}/sort?sort_by=${encodeURIComponent(sortBy)}&order=${encodeURIComponent(order)}`;
+      const { ok, status, body } = await safeFetch(url);
+      output.textContent = pretty(body);
+      showStatus(ok ? `Success (${status})` : `Failed (${status})`, ok);
+      apiStatus.textContent = ok ? `API: online (${status})` : `API: error (${status})`;
+      apiStatus.className = `status ${ok ? 'ok' : 'err'}`;
+      setLoading(false);
+    }
+
+    function clearOutput() { output.textContent = "Cleared." }
+    async function copyOutput() {
+      try {
+        await navigator.clipboard.writeText(output.textContent || "");
+        showStatus("Copied to clipboard", true);
+      } catch {
+        showStatus("Copy failed", false);
+      }
+    }
+
+    // UX niceties
+    pid.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        getPatient();
+      }
+    });
+
+    // Initial ping to show API status
+    ping().catch(() => {
+      apiStatus.textContent = "API: offline";
+      apiStatus.className = "status err";
+      showStatus("API offline", false);
+    });
+  </script>
+</body>
+</html>
